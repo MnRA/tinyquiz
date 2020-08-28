@@ -29,6 +29,28 @@
 ;; -------------------------
 ;; Page components
 (def results (atom {}))
+(def questions (atom {1 {:question "What is your favorite versioning tool?"
+                          :name :question1
+                          :options {"SVN" 0
+                                    "GIT" 10
+                                    "CVS" -5
+                                    "Mercurial" 5
+                                    "HUHH?" 0}}
+                      2 {:question "What is your favorite cat?"
+                          :name :question2
+                          :options {"Ceiling cat" 10
+                                    "Invisible bike cat" 5
+                                    "Octocat" 8
+                                    "Grumpy cat" 12
+                                    "Monorail cat" 2}}
+                      3 {:question "What is your favorite jewel?"
+                          :name :question3
+                          :options {"Diamond" 5
+                                    "Ruby" 10
+                                    "Kryptonite" 10
+                                    "Emerald" -5}}
+                      }
+                     ))
 
 (defn goto-question [question-id] (accountant/navigate! (path-for :question {:question-id question-id})))
 
@@ -38,7 +60,6 @@
     [:span.main
      [:h1 "Welcome to tinyquiz"]
      [:h2 "What's your name?"
-      [:p "current status: " @results]
       [:input {:type "text"
                :value (:name @results)
                :on-change #(swap! results assoc :name (-> % .-target .-value))
@@ -46,14 +67,27 @@
                                13 (goto-question 1))}]]]))
       [:li [:a {:href (path-for :items)} "Items of tinyquiz"]]
 
-
 (defn question-page []
   (fn []
     (let [routing-data (session/get :route)
-          question (get-in routing-data [:route-params :question-id])]
-      [:span.main
-       [:h1 (str "This is question " question)]])))
+          question-id (get-in routing-data [:route-params :question-id])
+          question-data (get @questions (int question-id))
+          name (:name question-data)]
+      (println @questions)
+      [:span.main {:on-key-down #(if (= 13 (.-which %))
+                                   (goto-question (inc (int question-id))))}
+       [:p (str "question values: " question-data)]
+       [:h1 (str "This is question " question-id)]
+       [:h2 (:question question-data)
+        (map (fn [[option-name option-val]]
+               [:div {:key option-name}
+                [:label {:for name} option-name]
+                [:input {:type :radio
 
+                         :name name
+                         :on-change #(swap! results assoc-in [:results name] option-val)}]] )
+             (:options question-data))]
+       ])))
 
 
 (defn items-page []
@@ -64,6 +98,7 @@
                  [:li {:name (str "item-" item-id) :key (str "item-" item-id)}
                   [:a {:href (path-for :item {:item-id item-id})} "Item: " item-id]])
                (range 1 60))]]))
+
 
 
 (defn item-page []
@@ -101,7 +136,8 @@
       [:div
        [:header
         [:p [:a {:href (path-for :index)} "Home"] " | "
-         [:a {:href (path-for :about)} "About tinyquiz"]]]
+         [:a {:href (path-for :about)} "About tinyquiz"]
+         [:p "current status: " @results]]]
        [page]])))
 
 ;; -------------------------
