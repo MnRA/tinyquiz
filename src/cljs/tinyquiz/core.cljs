@@ -19,14 +19,20 @@
     ["/questions"
      ["" :questions]
      ["/:question-id" :question]]
-    ["/about" :about]]))
+    ["/final-score" :final-score]
+    ]))
 
 (defn path-for [route & [params]]
   (if params
     (:path (reitit/match-by-name router route params))
     (:path (reitit/match-by-name router route))))
 
-(defn goto-question [question-id] (accountant/navigate! (path-for :question {:question-id question-id})))
+(defn goto-question
+  ([question-id] (goto-question question-id false))
+  ([question-id final-question]
+   (if final-question
+     (accountant/navigate! (path-for :final-score))
+     (accountant/navigate! (path-for :question {:question-id question-id})))))
 
 ;; State
 (def results (atom {}))
@@ -50,7 +56,8 @@
                           :options {"Diamond" 5
                                     "Ruby" 10
                                     "Kryptonite" 10
-                                    "Emerald" -5}}
+                                    "Emerald" -5}
+                         :final-question true}
                       }
                      ))
 
@@ -69,6 +76,13 @@
                                13 (goto-question 1))}]]]))
       [:li [:a {:href (path-for :items)} "Items of tinyquiz"]]
 
+(defn final-score-page []
+  (fn []
+    [:span.main
+     [:h1 (str "Congratulations " (:name @results) "! You completed the quiz!")]
+     [:h2 "Your final score was: "]
+     [:h1 (apply + (vals (:results @results)))]]))
+
 (defn question-page []
   (fn []
     (let [routing-data (session/get :route)
@@ -77,18 +91,29 @@
           name (:name question-data)]
       (println @questions)
       [:span.main {:on-key-down #(if (= 13 (.-which %))
-                                   (goto-question (inc (int question-id))))}
+                                   (goto-question (inc (int question-id))
+                                                  (:final-question question-data)))}
        [:p (str "question values: " question-data)]
        [:h1 (str "This is question " question-id)]
-       [:h2 (:question question-data)
-        (map (fn [[option-name option-val]]
-               [:div {:key option-name}
-                [:label {:for name} option-name]
-                [:input {:type :radio
+       [:h2 (:question question-data)]
+       (map (fn [[option-name option-val]]
+              [:div {:key option-name}
+               [:label {:for name } option-name]
+               [:input {:type :radio
 
-                         :name name
-                         :on-change #(swap! results assoc-in [:results name] option-val)}]] )
-             (:options question-data))]
+                        :name name
+                        :on-change #(swap! results assoc-in [:results name] option-val)}]
+               [:br]] )
+            (:options question-data))
+       [:button {:on-click #(if (= question-id "1")
+                              (accountant/navigate! (path-for :index))
+                              (goto-question (dec (int question-id))))}
+        "Previous"]
+
+       [:button {:on-click #(goto-question
+                             (inc (int question-id))
+                             (:final-question question-data))}
+        "Next"]
        ])))
 
 
@@ -99,7 +124,8 @@
 (defn page-for [route]
   (case route
     :index #'home-page
-    :question #'question-page))
+    :question #'question-page
+    :final-score #'final-score-page))
 
 
 ;; -------------------------
