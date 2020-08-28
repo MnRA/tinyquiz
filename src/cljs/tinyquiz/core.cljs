@@ -5,7 +5,8 @@
    [reagent.session :as session]
    [reitit.frontend :as reitit]
    [clerk.core :as clerk]
-   [accountant.core :as accountant]))
+   [accountant.core :as accountant]
+   [ajax.core :refer [GET]]))
 
 ;; -------------------------
 ;; Routes
@@ -61,19 +62,19 @@
                       }
                      ))
 
-
+;; (defn get-questionaire []
+;;   (cljs.reader/read-string (GET "/questionaire")))
 ;; Page components
 
 (defn home-page []
-  (fn []
-    [:span.main
-     [:h1 "Welcome to tinyquiz"]
-     [:h2 "What's your name?"
-      [:input {:type "text"
-               :value (:name @results)
-               :on-change #(swap! results assoc :name (-> % .-target .-value))
-               :on-key-down #(case (.-which %)
-                               13 (goto-question 1))}]]]))
+  [:span.main
+   [:h1 "Welcome to tinyquiz"]
+   [:h2 "What's your name?"
+    [:input {:type "text"
+             :value (:name @results)
+             :on-change #(swap! results assoc :name (-> % .-target .-value))
+             :on-key-down #(case (.-which %)
+                             13 (goto-question 1))}]]])
       [:li [:a {:href (path-for :items)} "Items of tinyquiz"]]
 
 (defn final-score-page []
@@ -93,7 +94,6 @@
       [:span.main {:on-key-down #(if (= 13 (.-which %))
                                    (goto-question (inc (int question-id))
                                                   (:final-question question-data)))}
-       [:p (str "question values: " question-data)]
        [:h1 (str "This is question " question-id)]
        [:h2 (:question question-data)]
        (map (fn [[option-name option-val]]
@@ -136,8 +136,7 @@
     (let [page (:current-page (session/get :route))]
       [:div
        [:header
-        [:p [:a {:href (path-for :index)} "Home"]
-         [:p "current status: " @results]]]
+        [:p [:a {:href (path-for :index)} "Home"]]]
        [page]])))
 
 ;; -------------------------

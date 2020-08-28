@@ -18,7 +18,8 @@
                  [metosin/jsonista "0.2.6"]
                  [pez/clerk "1.0.0"]
                  [venantius/accountant "0.2.5"
-                  :exclusions [org.clojure/tools.reader]]]
+                  :exclusions [org.clojure/tools.reader]]
+                 [cljs-ajax "0.7.5"]]
 
   :plugins [[lein-environ "1.1.0"]
             [lein-cljsbuild "1.1.7"]
@@ -92,7 +93,7 @@
                                   [figwheel-sidecar "0.5.20"]
                                   [nrepl "0.8.0"]
                                   [pjstadig/humane-test-output "0.10.0"]
-                                  
+
  ]
 
                    :source-paths ["env/dev/clj"]
