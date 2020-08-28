@@ -26,9 +26,11 @@
     (:path (reitit/match-by-name router route params))
     (:path (reitit/match-by-name router route))))
 
-;; -------------------------
-;; Page components
+(defn goto-question [question-id] (accountant/navigate! (path-for :question {:question-id question-id})))
+
+;; State
 (def results (atom {}))
+
 (def questions (atom {1 {:question "What is your favorite versioning tool?"
                           :name :question1
                           :options {"SVN" 0
@@ -52,8 +54,8 @@
                       }
                      ))
 
-(defn goto-question [question-id] (accountant/navigate! (path-for :question {:question-id question-id})))
 
+;; Page components
 
 (defn home-page []
   (fn []
@@ -90,30 +92,6 @@
        ])))
 
 
-(defn items-page []
-  (fn []
-    [:span.main
-     [:h1 "The items of tinyquiz"]
-     [:ul (map (fn [item-id]
-                 [:li {:name (str "item-" item-id) :key (str "item-" item-id)}
-                  [:a {:href (path-for :item {:item-id item-id})} "Item: " item-id]])
-               (range 1 60))]]))
-
-
-
-(defn item-page []
-  (fn []
-    (let [routing-data (session/get :route)
-          item (get-in routing-data [:route-params :item-id])]
-      [:span.main
-       [:h1 (str "Item " item " of tinyquiz")]
-       [:p [:a {:href (path-for :items)} "Back to the list of items"]]])))
-
-
-(defn about-page []
-  (fn [] [:span.main
-          [:h1 "About tinyquiz"]]))
-
 
 ;; -------------------------
 ;; Translate routes -> page components
@@ -121,9 +99,6 @@
 (defn page-for [route]
   (case route
     :index #'home-page
-    :about #'about-page
-    :items #'items-page
-    :item #'item-page
     :question #'question-page))
 
 
@@ -135,8 +110,7 @@
     (let [page (:current-page (session/get :route))]
       [:div
        [:header
-        [:p [:a {:href (path-for :index)} "Home"] " | "
-         [:a {:href (path-for :about)} "About tinyquiz"]
+        [:p [:a {:href (path-for :index)} "Home"]
          [:p "current status: " @results]]]
        [page]])))
 
