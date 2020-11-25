@@ -14,9 +14,6 @@
 (def router
   (reitit/router
    [["/" :index]
-    ["/items"
-     ["" :items]
-     ["/:item-id" :item]]
     ["/questions"
      ["" :questions]
      ["/:question-id" :question]]
@@ -38,44 +35,30 @@
 ;; State
 (def results (atom {}))
 
-(def questions (atom {1 {:question "What is your favorite versioning tool?"
-                          :name :question1
-                          :options {"SVN" 0
-                                    "GIT" 10
-                                    "CVS" -5
-                                    "Mercurial" 5
-                                    "HUHH?" 0}}
-                      2 {:question "What is your favorite cat?"
-                          :name :question2
-                          :options {"Ceiling cat" 10
-                                    "Invisible bike cat" 5
-                                    "Octocat" 8
-                                    "Grumpy cat" 12
-                                    "Monorail cat" 2}}
-                      3 {:question "What is your favorite jewel?"
-                          :name :question3
-                          :options {"Diamond" 5
-                                    "Ruby" 10
-                                    "Kryptonite" 10
-                                    "Emerald" -5}
-                         :final-question true}
-                      }
-                     ))
+(def questionaire (atom nil))
 
-;; (defn get-questionaire []
-;;   (cljs.reader/read-string (GET "/questionaire")))
+(defn get-questionaire []
+  (GET "/questionaire" :handler #(reset! questionaire %)
+       :response-format :json))
+
+
 ;; Page components
 
+
+
 (defn home-page []
-  [:span.main
-   [:h1 "Welcome to tinyquiz"]
-   [:h2 "What's your name?"
-    [:input {:type "text"
-             :value (:name @results)
-             :on-change #(swap! results assoc :name (-> % .-target .-value))
-             :on-key-down #(case (.-which %)
-                             13 (goto-question 1))}]]])
-      [:li [:a {:href (path-for :items)} "Items of tinyquiz"]]
+  (get-questionaire)
+  (fn []
+    [:span.main
+     [:h1 "Welcome to tinyquiz"]
+     [:h2 "What's your name?"]
+     [:input {:type "text"
+              :value (:name @results)
+              :on-change #(swap! results assoc :name (-> % .-target .-value))
+              :on-key-down #(case (.-which %)
+                              13 (goto-question 1))}]
+     [:button {:on-click #(goto-question 1)} "Start Quiz"]]))
+
 
 (defn final-score-page []
   (fn []
@@ -88,9 +71,9 @@
   (fn []
     (let [routing-data (session/get :route)
           question-id (get-in routing-data [:route-params :question-id])
-          question-data (get @questions (int question-id))
+          question-data (clojure.walk/keywordize-keys
+                         (get @questionaire question-id))
           name (:name question-data)]
-      (println @questions)
       [:span.main {:on-key-down #(if (= 13 (.-which %))
                                    (goto-question (inc (int question-id))
                                                   (:final-question question-data)))}
